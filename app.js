@@ -14,20 +14,25 @@ var argv = yargs
     .alias('help', 'h')
     .argv;
 
-console.log(argv.address);
 var encodedAddress = encodeURIComponent(argv.address);
 
 request({ 
     url: `https://nominatim.openstreetmap.org/search.php?q=${encodedAddress}&format=json`,
-    json: true,
+    json: true,         //This is included so that we don't have to manually parse JSON
     headers: {
-        'User-Agent': 'request'
+        'User-Agent': 'request'   //This is important, otherwise OSM denies HTTP request.
     }
 }, (error, response, body) => {
-    for (var i in body) {
-        console.log('--');
-        console.log(`Address: ${body[i].display_name}`);
-        console.log(`Latitude: ${body[i].lat}`);
-        console.log(`Longitude: ${body[i].lon}`);
+    if (error) {
+        console.log("Unable to connect to OpenStreetMap Nominatim");
+    } else if (body.length === 0) {
+        console.log("Unable to find that address.");
+    } else {
+        for(var i in body) {
+            console.log('--');
+            console.log(`Address: ${body[i].display_name}`);
+            console.log(`Latitude: ${body[i].lat}`);
+            console.log(`Longitude: ${body[i].lon}`);
+        }
     }
 });
