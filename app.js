@@ -24,7 +24,10 @@ request({
         'User-Agent': 'request'
     }
 }, (error, response, body) => {
-    console.log(`Address: ${body[0].display_name}`);
-    console.log(`Latitude: ${body[0].lat}`);
-    console.log(`Longitude: ${body[0].lon}`);
+    for (var i in body) {
+        console.log('--');
+        console.log(`Address: ${body[i].display_name}`);
+        console.log(`Latitude: ${body[i].lat}`);
+        console.log(`Longitude: ${body[i].lon}`);
+    }
 });
