@@ -1,5 +1,5 @@
-const request = require('request');
 const yargs = require('yargs');
+const geocode = require('./geocode/geocode');
 
 var argv = yargs
     .options({
@@ -14,25 +14,11 @@ var argv = yargs
     .alias('help', 'h')
     .argv;
 
-var encodedAddress = encodeURIComponent(argv.address);
-
-request({ 
-    url: `https://nominatim.openstreetmap.org/search.php?q=${encodedAddress}&format=json`,
-    json: true,         //This is included so that we don't have to manually parse JSON
-    headers: {
-        'User-Agent': 'request'   //This is important, otherwise OSM denies HTTP request.
-    }
-}, (error, response, body) => {
-    if (error) {
-        console.log("Unable to connect to OpenStreetMap Nominatim");
-    } else if (body.length === 0) {
-        console.log("Unable to find that address.");
+geocode.geocodeAddress(argv.address, (errorMessage, results) => {
+    if (errorMessage) {
+        console.log(errorMessage);
     } else {
-        for(var i in body) {
-            console.log('--');
-            console.log(`Address: ${body[i].display_name}`);
-            console.log(`Latitude: ${body[i].lat}`);
-            console.log(`Longitude: ${body[i].lon}`);
-        }
+        console.log(JSON.stringify(results, undefined, 2));
     }
 });
+
