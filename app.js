@@ -2,39 +2,39 @@ require("dotenv").config({
     path: 'variables.env' 
 });
 
-// const yargs = require('yargs');
-// const geocode = require('./geocode/geocode');
+const yargs = require('yargs');
+const geocode = require('./geocode/geocode');
+const weather = require('./weather/weather');
 
-// var argv = yargs
-//     .options({
-//         a: {
-//             describe: "Address to fetch Weather for",
-//             demand: true,
-//             alias: 'address',
-//             string: true
-//         }
-//     })
-//     .help()
-//     .alias('help', 'h')
-//     .argv;
+var argv = yargs
+    .options({
+        a: {
+            describe: "Address to fetch Weather for",
+            demand: true,
+            alias: 'address',
+            string: true
+        }
+    })
+    .help()
+    .alias('help', 'h')
+    .argv;
 
-// geocode.geocodeAddress(argv.address, (errorMessage, results) => {
-//     if (errorMessage) {
-//         console.log(errorMessage);
-//     } else {
-//         console.log(JSON.stringify(results, undefined, 2));
-//     }
-// });
-
-
-const request = require('request');
-request({
-    url: `https://api.darksky.net/forecast/${process.env.API_KEY}/37.8267,-122.4233`,
-    json: true
-}, (error, response, body) => {
-    if (!error && response.statusCode === 200) {
-        console.log(body.currently.temperature);
+geocode.geocodeAddress(argv.address, (errorMessage, results) => {
+    if (errorMessage) {
+        console.log(errorMessage);
     } else {
-        console.log("Unable to fetch Weather");
+        results.forEach(result => {
+            weather.getWeather(result.latitude, result.longitude, (errorMessage, weatherResults) => {
+                if (errorMessage) {
+                    console.log(errorMessage);
+                } else {
+                    console.log("--");
+                    console.log(result.address);
+                    console.log(`It's currently ${weatherResults.temperature}. It feels like ${weatherResults.apparentTemperature}.`);
+                }
+            });
+        });
     }
 });
+
+
