@@ -1,12 +1,11 @@
-require("dotenv").config({ 
-    path: 'variables.env' 
+require("dotenv").config({
+    path: 'variables.env'
 });
 
 const yargs = require('yargs');
-const geocode = require('./geocode/geocode');
-const weather = require('./weather/weather');
+const axios = require('axios');
 
-var argv = yargs
+let argv = yargs
     .options({
         a: {
             describe: "Address to fetch Weather for",
@@ -19,22 +18,27 @@ var argv = yargs
     .alias('help', 'h')
     .argv;
 
-geocode.geocodeAddress(argv.address, (errorMessage, results) => {
-    if (errorMessage) {
-        console.log(errorMessage);
-    } else {
-        results.forEach(result => {
-            weather.getWeather(result.latitude, result.longitude, (errorMessage, weatherResults) => {
-                if (errorMessage) {
-                    console.log(errorMessage);
-                } else {
-                    console.log("--");
-                    console.log(result.address);
-                    console.log(`It's currently ${weatherResults.temperature}. It feels like ${weatherResults.apparentTemperature}.`);
-                }
-            });
-        });
-    }
-});
+let encodedAddress = encodeURIComponent(argv.address);
+let url= `https://nominatim.openstreetmap.org/search.php?q=${encodedAddress}&format=json`;
 
-
+axios.get(url)
+    .then((response) => {
+        if (response.data.length === 0) {
+            throw new Error("Unable to find that address.");
+        }
+        let lat = response.data[0].lat;
+        let long = response.data[0].lon;
+        let weatherUrl = `https://api.darksky.net/forecast/${process.env.API_KEY}/${lat},${long}`;
+        console.log(response.data[0].display_name);
+        return axios.get(weatherUrl);
+    })
+    .then((response) => {
+        console.log(`It's currently ${response.data.currently.temperature}. It feels like ${response.data.currently.apparentTemperature}.`);
+    }) 
+    .catch((e) => {
+        if (e.code === 'ENOTFOUND') {
+            console.log("Unable to connect to API server");
+        } else {
+            console.log(e.message);
+        }
+    });
