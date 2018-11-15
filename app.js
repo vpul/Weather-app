@@ -2,6 +2,7 @@ require("dotenv").config({
     path: 'variables.env'
 });
 
+const fs = require('fs');
 const yargs = require('yargs');
 const axios = require('axios');
 
@@ -9,14 +10,34 @@ let argv = yargs
     .options({
         a: {
             describe: "Address to fetch Weather for",
-            demand: true,
+            demand: false,
             alias: 'address',
+            string: true
+        },
+        d: {
+            describe: "Set default address",
+            demand: false,
+            alias: 'setdefault',
             string: true
         }
     })
     .help()
     .alias('help', 'h')
     .argv;
+
+if (argv.setdefault) {
+    fs.writeFileSync("defaultAddress.txt", argv.setdefault);
+}
+
+if (!argv.address) {
+    try {
+      argv.address = fs.readFileSync("defaultAddress.txt");
+    } catch (e) {
+        console.log("Please provide an address. \n");
+        yargs.showHelp();
+        process.exit();
+    }
+}
 
 let encodedAddress = encodeURIComponent(argv.address);
 let url= `https://nominatim.openstreetmap.org/search.php?q=${encodedAddress}&format=json`;
@@ -33,7 +54,7 @@ axios.get(url)
         return axios.get(weatherUrl);
     })
     .then((response) => {
-        console.log(`It's currently ${response.data.currently.temperature}. It feels like ${response.data.currently.apparentTemperature}.`);
+        console.log(`It's currently ${response.data.currently.summary}. The current temperature is ${response.data.currently.temperature}. It feels like ${response.data.currently.apparentTemperature}.`);
     }) 
     .catch((e) => {
         if (e.code === 'ENOTFOUND') {
